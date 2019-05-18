@@ -8,16 +8,16 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use MessageBox\Client\Model\Message;
 
-class SendCommand extends Command
+class DeliverCommand extends Command
 {
     protected function configure()
     {
         $this
-            ->setName('message:send')
-            ->setDescription('Send a message through MessageBox by placing it the outbox')
+            ->setName('message:deliver')
+            ->setDescription('Deliver a message into a MessageBox inbox')
             ->addArgument(
                 'filename',
-                InputArgument::REQUIRED,
+                InputArgument::OPTIONAL,
                 'Filename'
             )
         ;
@@ -26,13 +26,27 @@ class SendCommand extends Command
     protected function execute(InputInterface $input, OutputInterface $output)
     {
         $filename = $input->getArgument('filename');
-        if (!file_exists($filename)) {
-            throw new RuntimeException("File not found: " . $filename);
-        }
-        $json = file_get_contents($filename);
-        $envelope = json_decode($json, true);
-        if (!$envelope) {
-            throw new RuntimeException("JSON parse error");
+        if ($filename) {
+            $json = file_get_contents($filename);
+            $envelope = json_decode($json, true);
+        } else {
+            $envelope = [
+                'id' => '{stamp}@{hostname}',
+                'subject' => 'Example subject {stamp}',
+                'from' => [
+                    'displayName' => 'Alice Alisson',
+                    'address' => 'alice',
+                ],
+                'to' => [
+                    [
+                        'displayName' => 'Bob Bobson',
+                        'address' => 'bob',
+                    ],
+                ],
+                'dateTime' => '{dateTime}',
+                'contentType' => 'text/plain',
+                'content' => 'Hello Bob!',
+            ];
         }
 
         // Support some simple search/replace code for variantion
@@ -45,7 +59,7 @@ class SendCommand extends Command
         $factory = new ClientFactory();
         $client = $factory->createClient();
 
-        $res = $client->send($envelope);
+        $res = $client->deliver($envelope);
         print_r($res);
     }
 }

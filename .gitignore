@@ -1,7 +1,8 @@
 vendor/*
+.env
 config.json
 composer.phar
 example/*
-
+envelope.json
 
 autotune.json
